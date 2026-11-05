@@ -1,0 +1,50 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Supervisores · Estacionómetros Delicias</title><meta name="robots" content="noindex"><link rel="icon" href="/icons/icon-192.png">
+<style>
+:root{--n:#06235a;--b:#1456d9;--bg:#f3f7fd;--c:#fff;--tx:#0c1a3a;--mu:#6b7a99;--bd:#e1e9f7;--ok:#0f9d63;--wa:#ff8a00;--er:#d93a3a}
+@media(prefers-color-scheme:dark){:root{--bg:#071226;--c:#0f1f3d;--tx:#eaf2ff;--mu:#98abd0;--bd:#1f3564}}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--tx);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;gap:12px;padding:12px 18px;background:var(--c);border-bottom:1px solid var(--bd)}header img{width:34px;height:34px;border-radius:9px}header b{flex:1}
+main{max-width:640px;margin:auto;padding:16px}.c{background:var(--c);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:12px}
+input,select,textarea{width:100%;padding:12px;margin:5px 0 10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+button{border:0;border-radius:10px;padding:11px 16px;background:var(--b);color:#fff;font:600 15px inherit;cursor:pointer}button.s{background:var(--bd);color:var(--tx)}
+.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button{flex:1;background:var(--c);color:var(--tx);border:1px solid var(--bd)}.tabs .on{background:var(--b);color:#fff}
+.t{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;color:#fff;background:var(--wa)}.m{color:var(--mu);font-size:13px}.hid{display:none}.al{border-left:4px solid var(--wa)}
+</style></head><body><header><img src="/icons/icon-192.png" alt=""><b>Supervisores</b><span id="who" class="m"></span><button class="s hid" id="out">Salir</button></header>
+<main><div id="auth"><div class="tabs"><button id="t1" class="on">Entrar</button><button id="t2">Registro</button></div>
+<div class="c"><form id="fa"><div id="rg" class="hid"><label class="m">Nombre completo</label><input id="nm" maxlength="80"><label class="m">Teléfono</label><input id="tl" type="tel" maxlength="20"></div>
+<label class="m">Correo</label><input id="em" type="email" required><label class="m">Contraseña</label><input id="pw" type="password" minlength="8" required><button id="go">Entrar</button> <span id="msg" class="m"></span></form></div></div>
+<div id="app" class="hid"><div class="m" id="gp" style="margin-bottom:10px">📡 Activando ubicación…</div><div class="tabs"><button data-v="al" class="on">Alertas <span id="nb"></span></button><button data-v="rep">Reportes</button><button data-v="cor">Corte</button></div>
+<div id="al"></div><div id="rep" class="hid"></div>
+<div id="cor" class="hid"><div class="c"><form id="fc"><label class="m">Parquímetro</label><select id="cp" required></select><label class="m">Monto recogido (MXN)</label><input id="cm" type="number" min="0" step="0.5" inputmode="decimal" required><label class="m">Nota (opcional)</label><input id="cn" maxlength="200"><button>Registrar corte</button></form></div><div id="cl"></div></div></div>
+<div id="pend" class="c hid">Tu registro está pendiente. Un administrador debe aprobar tu cuenta.</div></main>
+<script>
+const SB='https://jawtbygyawivolwudpax.supabase.co',K='sb_publishable__dFXTrjmFzsHavJNGe596A_Y8-YETPV';
+const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let tok,uid,reg=false,seen=new Set(),lp=0;
+const api=async(p,o={})=>{const r=await fetch(SB+p,{...o,headers:{apikey:K,Authorization:'Bearer '+(tok||K),'Content-Type':'application/json',...(o.headers||{})}});const j=await r.json().catch(()=>null);if(!r.ok)throw new Error(j?.msg||j?.message||j?.error_description||'Error');return j};
+$('t1').onclick=()=>mode(0);$('t2').onclick=()=>mode(1);
+function mode(r){reg=!!r;$('rg').classList.toggle('hid',!r);$('t1').classList.toggle('on',!r);$('t2').classList.toggle('on',r);$('go').textContent=r?'Registrarme':'Entrar'}
+$('fa').onsubmit=async e=>{e.preventDefault();$('msg').textContent='';try{
+if(reg){await api('/auth/v1/signup',{method:'POST',body:JSON.stringify({email:$('em').value,password:$('pw').value,data:{nombre:$('nm').value,telefono:$('tl').value}})});$('msg').textContent='Listo. Un administrador aprobará tu cuenta; después entra aquí.';mode(0)}
+else{const j=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:$('em').value,password:$('pw').value})});tok=j.access_token;uid=j.user.id;start()}}catch(er){$('msg').textContent=er.message}};
+$('out').onclick=()=>location.reload();
+async function start(){const [p]=await api('/rest/v1/perfiles?select=*&user_id=eq.'+uid);$('auth').classList.add('hid');$('out').classList.remove('hid');$('who').textContent=p?.nombre||'';
+if(!p?.activo){$('pend').classList.remove('hid');return}$('app').classList.remove('hid');
+const q=await api('/rest/v1/parquimetros?select=id,calle&order=id');$('cp').innerHTML=q.map(x=>`<option value="${x.id}">${x.id} · ${esc(x.calle)}</option>`).join('');
+if(window.Notification&&Notification.permission=='default')Notification.requestPermission();
+if(navigator.geolocation)navigator.geolocation.watchPosition(g=>{$('gp').textContent='📍 Compartiendo tu ubicación con la administración';if(Date.now()-lp>30000){lp=Date.now();api('/rest/v1/rpc/ping_ubicacion',{method:'POST',body:JSON.stringify({p_lat:g.coords.latitude,p_lng:g.coords.longitude})}).catch(()=>{})}},()=>{$('gp').textContent='⚠️ Activa el permiso de ubicación para que la administración te vea en el mapa.'},{enableHighAccuracy:true,maximumAge:15000});
+else $('gp').textContent='Tu dispositivo no permite ubicación.';
+loadAl();setInterval(()=>{loadAl();if(!$('rep').classList.contains('hid'))loadRep()},15000)}
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-v]').forEach(x=>x.classList.toggle('on',x==b));['al','rep','cor'].forEach(v=>$(v).classList.toggle('hid',v!=b.dataset.v));({al:loadAl,rep:loadRep,cor:loadCor})[b.dataset.v]()});
+async function loadAl(){const l=await api('/rest/v1/alertas?select=id,creado,reporte:reportes(folio,parquimetro_id,falla,monto,estatus)&leida=eq.false&order=creado.desc');$('nb').textContent=l.length?`(${l.length})`:'';
+l.forEach(a=>{if(!seen.has(a.id)){seen.add(a.id);if(seen.size>1||lp){try{navigator.vibrate&&navigator.vibrate(200);Notification.permission=='granted'&&new Notification('Reporte por revisar',{body:(a.reporte?.parquimetro_id||'')+' · '+(a.reporte?.falla||'')})}catch(_){}}}});
+$('al').innerHTML=l.map(a=>`<div class="c al"><b>Reporte por revisar</b> <span class="t">${esc(a.reporte?.folio)}</span><div>${esc(a.reporte?.parquimetro_id)} · ${esc(a.reporte?.falla)} · depositó $${a.reporte?.monto}</div><div class="m">${new Date(a.creado).toLocaleTimeString('es-MX')}</div><p><button class="s" onclick="lee('${a.id}')">Enterado</button></p></div>`).join('')||'<div class="c m">Sin alertas pendientes.</div>'}
+async function lee(id){await api('/rest/v1/alertas?id=eq.'+id,{method:'PATCH',body:JSON.stringify({leida:true})});loadAl()}
+async function loadRep(){if(document.activeElement?.closest('#rep'))return;const l=await api('/rest/v1/reportes?select=*&estatus=eq.pendiente&order=creado.asc&limit=30');
+$('rep').innerHTML=l.map(r=>`<div class="c"><b>${esc(r.folio)}</b> · ${esc(r.parquimetro_id)}<div>${esc(r.falla)} · depositó $${r.monto} · placa ${esc(r.placa)}</div><div class="m">${esc(r.nombre)} · ${esc(r.telefono)} · ${new Date(r.creado).toLocaleTimeString('es-MX')}${r.detalle?' · '+esc(r.detalle):''}</div>
+<select id="s${r.id}"><option value="procedente">Procedente (falla confirmada)</option><option value="improcedente">Improcedente</option></select><input id="n${r.id}" placeholder="Nota" maxlength="500"><button onclick="at('${r.id}')">Atender</button></div>`).join('')||'<div class="c m">Sin reportes pendientes.</div>'}
+async function at(id){await api('/rest/v1/rpc/atender_reporte',{method:'POST',body:JSON.stringify({p_id:id,p_estatus:$('s'+id).value,p_nota:$('n'+id).value})});loadRep()}
+$('fc').onsubmit=async e=>{e.preventDefault();try{await api('/rest/v1/cortes',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({parquimetro_id:$('cp').value,monto:+$('cm').value,nota:$('cn').value||null,inspector_id:uid})});$('cm').value='';$('cn').value='';loadCor()}catch(er){alert(er.message)}};
+async function loadCor(){const l=await api('/rest/v1/cortes?select=*&inspector_id=eq.'+uid+'&order=creado.desc&limit=8');$('cl').innerHTML=l.map(x=>`<div class="c">${esc(x.parquimetro_id)} · <b>$${x.monto}</b> <span class="m">${new Date(x.creado).toLocaleString('es-MX')}</span></div>`).join('')}
+</script></body></html>
