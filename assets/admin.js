@@ -1,4 +1,5 @@
-import {enhanceIncidentWorkspace} from './incident-workspace.js';
+import {refreshNotificationCenter} from './map-console.js';
+import {enhanceIncidentWorkspace,enhanceTicketDetail} from './incident-workspace.js';
 import {enhanceAdminModule} from './admin-modules.js';
 import {setupMapConsole,matchesMapMeter,selectMapEntity,updateMapStaff} from './map-console.js';
 import {setupPush,detachPush} from './push.js';
@@ -13,7 +14,7 @@ $('login').onsubmit=async e=>{e.preventDefault();await busy(e.submitter,async()=
 $('logout').onclick=async()=>{clearInterval(interval);clearInterval(locationInterval);await detachPush();await logout();location.reload();};
 $('refresh').onclick=()=>busy($('refresh'),()=>load().catch(e=>message('admin-message',e.message,true)));
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=async()=>{page=b.dataset.page;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x===b));$('page-title').textContent=b.textContent.trim();try{await load();}catch(e){message('admin-message',e.message,true);}});
-async function load(){message('admin-message','');$('view').hidden=page==='mapa';$('map-view').hidden=page!=='mapa';await updateTariffReminder();await({resumen, mapa, reportes,multas,buzon,aparatos,equipo,cortes,tarifas,mantenimiento,auditoria})[page]();enhanceAdminModule(page);enhanceIncidentWorkspace(page);$('updated').textContent='Actualizado '+new Date().toLocaleTimeString('es-MX',{timeZone:'America/Chihuahua'})+(page==='mapa'?' · GPS del mapa cada 5 s':' · consulta cada 15 s');}
+async function load(){message('admin-message','');$('view').hidden=page==='mapa';$('map-view').hidden=page!=='mapa';await updateTariffReminder();await refreshNotificationCenter(api).catch(()=>{});await({resumen, mapa, reportes,multas,buzon,aparatos,equipo,cortes,tarifas,mantenimiento,auditoria})[page]();enhanceAdminModule(page);enhanceIncidentWorkspace(page);if(page==='multas')enhanceTicketDetail();$('updated').textContent='Actualizado '+new Date().toLocaleTimeString('es-MX',{timeZone:'America/Chihuahua'})+(page==='mapa'?' · GPS del mapa cada 5 s':' · consulta cada 15 s');}
 async function updateTariffReminder(){try{const active=await api('/rest/v1/tarifas?select=id&activa=eq.true');$('tariff-reminder').innerHTML=active.length?'<b>Revisión de tarifas:</b> hay '+active.length+' tarifa(s) activa(s). Confirma su vigencia y fundamento antes de operar.':'<b>Tarifas pendientes:</b> conceptos e importes de infracción requieren fundamento autorizado. La emisión seguirá bloqueada hasta registrar la autorización.';}catch{$('tariff-reminder').textContent='Recordatorio: deja pendientes las tarifas de infracción hasta contar con autorización y fundamento.';}}
 async function resumen(){await renderAdminDashboard({api,goTo:target=>document.querySelector('[data-page="'+target+'"]').click()});}
 async function mapa(){
