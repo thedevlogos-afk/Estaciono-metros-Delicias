@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import handler,{allowedEndpoint} from '../api/push/dispatch.js';
+test('dispatcher rechaza destinos privados, credenciales y puertos ajenos',()=>{for(const u of ['http://fcm.googleapis.com/a','https://127.0.0.1/a','https://fcm.googleapis.com.evil.test/a','https://fcm.googleapis.com:8080/a','https://user:pass@fcm.googleapis.com/a'])assert.equal(allowedEndpoint(u),false,u);assert.equal(allowedEndpoint('https://fcm.googleapis.com/fcm/send/test'),true);assert.equal(allowedEndpoint('https://web.push.apple.com/test'),true);});
+test('autorización UTF-8 malformada no genera excepción ni expone cola',async()=>{const before=process.env.PUSH_DISPATCH_KEY;process.env.PUSH_DISPATCH_KEY='abc';const res={setHeader(){},status(n){this.code=n;return this;},json(v){this.value=v;return this;}};try{await handler({method:'POST',headers:{authorization:'Bearer ééé'}},res);assert.equal(res.code,401);}finally{if(before===undefined)delete process.env.PUSH_DISPATCH_KEY;else process.env.PUSH_DISPATCH_KEY=before;}});

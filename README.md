@@ -55,3 +55,19 @@ Ver el plan integral en la rama `plan/plataforma-integral-2026-11-13` para alcan
 Se crearon dos cuentas de prueba solicitadas (operador y administrador) y se verificó HTTP 200 en el inicio de sesión y sus roles activos. Las contraseñas no se almacenan en el repositorio. La cuenta del propietario quedó activada tras confirmar su correo.
 
 QRCode.js 1.0.0 está incluido localmente con licencia MIT. El QR del ticket apunta al portal administrativo y solo contiene el folio: requiere login del personal y no expone placas en la URL. La impresión física sigue pendiente de hardware real.
+
+## Avisos y turno Android (0.3.0)
+
+Firebase: `estacionometros-delicias`, aplicaciones web y Android `mx.estacionometros.delicias.operador`. Sólo Messaging; Supabase mantiene correo/contraseña. No se inicializa Analytics en los portales.
+
+Los usuarios autenticados activan avisos por dispositivo, envían una prueba y los desactivan. Web Push cifrado utiliza VAPID; Chrome entrega a través de FCM. La instalación también se registra con el SDK Firebase cuando es compatible. `sw.js` muestra avisos generales y abre el portal; nunca guarda respuestas privadas. No hay avisos ni login para el conductor.
+
+`db/notificaciones_push.sql`: suscripciones con RLS por propietario, cola privada idempotente, leases de 90 s, hasta seis intentos y cron cada minuto. `/api/push/config` expone sólo la clave pública y disponibilidad. `/api/push/dispatch` exige un secreto independiente y limita destinos a proveedores conocidos; nunca usa una service_role en el navegador. Configurar `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `PUSH_DISPATCH_KEY` como variables de producción (las dos últimas Secret). La URL y secreto del dispatcher se insertan sólo en `ops_private.push_config`, jamás en git.
+
+Android 10+: fuente en `android/`. Inicia sesión en el portal de operación dentro de un WebView limitado al origen municipal. El puente sólo acepta mensajes del marco principal del origen HTTPS exacto. La sesión permanece en memoria, no en disco. Durante un turno, Android administra la renovación y las solicitudes para evitar carreras al renovar tokens desde la página y el servicio. Solicita ubicación precisa y notificaciones antes de iniciar. Un servicio de ubicación en primer plano envía posiciones nuevas cada 25 segundos, conserva precisión y rechaza capturas de más de 30 segundos; no requiere pantalla encendida. Cerrar turno o salir detiene el servicio. La notificación permite cerrar turno con conexión. El sistema puede detener el proceso por cierre forzado, permisos, batería o reinicio; al volver debe iniciar sesión/reactivar ubicación. No hay rastreo automático al arrancar el teléfono.
+
+**Estado nativo:** el servicio consulta alertas asignadas cada 25 s durante el turno y las notifica. El receptor Firebase está integrado, pero el envío nativo FCM desde el servidor queda pendiente de configurar una identidad de servidor con permiso `cloudmessaging.messages.create`; no confundir esta consulta periódica con push nativo. El push web sí utiliza la cola y VAPID sin claves de cuentas de servicio Google.
+
+Compilar: JDK 21, SDK 36, `cd android && ./gradlew assembleDebug lintDebug`. El APK debug es para pruebas; no es una versión Play firmada de producción. Validación física pendiente: Android con GPS preciso, caminar, minimizar/bloquear 10 minutos, comparar `ubicacion_at`/precisión en Administración, comprobar alerta y cierre de turno. También probar denegación de permiso, pérdida de red y restricción de batería. No afirmar continuidad en un teléfono hasta completar esa prueba.
+
+Las tarifas continúan pendientes y la emisión permanece deshabilitada hasta contar con conceptos autorizados.

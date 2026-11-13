@@ -1,11 +1,12 @@
+import {setupPush,detachPush} from './push.js';
 import{$,api,rpc,login,logout,busy,message,esc,date,money,mountMap,setupNetwork}from'./core.js';
 setupNetwork();let page='resumen',map,layer,interval,rangeDays=7,folioSearch=new URLSearchParams(location.search).get('folio')||'';
 if(folioSearch){page='multas';document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('page-title').textContent='Tickets y analítica';}
 const paths={meters:'/rest/v1/parquimetros?select=*&order=id',staff:'/rest/v1/perfiles?select=*&order=nombre',reports:'/rest/v1/reportes?select=*&order=creado.desc&limit=100'};
 const card=(n,label)=>`<div class="card"><div class="number">${esc(n)}</div><small>${esc(label)}</small></div>`;
 const empty=t=>`<article class="card muted">${esc(t)}</article>`;
-$('login').onsubmit=async e=>{e.preventDefault();await busy(e.submitter,async()=>{try{await login($('email').value,$('password').value,'admin');$('password').value='';$('auth').hidden=true;$('app').hidden=false;await load();interval=setInterval(()=>{if(!document.hidden&&!document.activeElement?.closest('#view form'))load().catch(er=>message('admin-message',er.message,true));},15000);}catch(er){message('auth-message',er.message,true);}});};
-$('logout').onclick=async()=>{clearInterval(interval);await logout();location.reload();};
+$('login').onsubmit=async e=>{e.preventDefault();await busy(e.submitter,async()=>{try{await login($('email').value,$('password').value,'admin');$('password').value='';setupPush();$('auth').hidden=true;$('app').hidden=false;await load();interval=setInterval(()=>{if(!document.hidden&&!document.activeElement?.closest('#view form'))load().catch(er=>message('admin-message',er.message,true));},15000);}catch(er){message('auth-message',er.message,true);}});};
+$('logout').onclick=async()=>{clearInterval(interval);await detachPush();await logout();location.reload();};
 $('refresh').onclick=()=>busy($('refresh'),()=>load().catch(e=>message('admin-message',e.message,true)));
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=async()=>{page=b.dataset.page;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x===b));$('page-title').textContent=b.textContent.trim();try{await load();}catch(e){message('admin-message',e.message,true);}});
 async function load(){message('admin-message','');$('view').hidden=page==='mapa';$('map-view').hidden=page!=='mapa';await({resumen, mapa, reportes,multas,buzon,aparatos,equipo,cortes,tarifas,mantenimiento,auditoria})[page]();$('updated').textContent='Actualizado '+new Date().toLocaleTimeString('es-MX')+' · consulta cada 15 s';}
