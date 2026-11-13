@@ -1,4 +1,4 @@
-const CACHE='estacionometros-shell-v5';
+const CACHE='estacionometros-shell-v6';
 const SHELL=['/','/assets/app.css','/assets/core.js','/assets/native.js','/assets/citizen.js','/assets/logo-portales.png','/assets/icon-192.png','/assets/icon-512.png','/manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('est')&&k!==CACHE).map(k=>caches.delete(k))))));
