@@ -1,0 +1,2 @@
+// Identificadores públicos de la app; no concede acceso a datos ni sustituye Supabase Auth.
+export const firebaseConfig={apiKey:'AIzaSyCzO-COryW84bOKh7ldA6e1ehpCoHgI3WA',authDomain:'estacionometros-delicias.firebaseapp.com',projectId:'estacionometros-delicias',storageBucket:'estacionometros-delicias.firebasestorage.app',messagingSenderId:'869388930451',appId:'1:869388930451:web:4f6a6cafa2bcb770446c66'};

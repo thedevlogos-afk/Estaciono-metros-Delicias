@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "869388930451",
+    "project_id": "estacionometros-delicias",
+    "storage_bucket": "estacionometros-delicias.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:869388930451:android:38a0153b8d1f2f5d446c66",
+        "android_client_info": {
+          "package_name": "mx.estacionometros.delicias.operador"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwxQxgWp50eFapX3k8sfnF0JOggVrx6TI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

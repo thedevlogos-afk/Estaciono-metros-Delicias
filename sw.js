@@ -1,5 +1,8 @@
-const CACHE='estacionometros-shell-v4';
-const SHELL=['/','/assets/app.css','/assets/core.js','/assets/citizen.js','/assets/logo-portales.png','/assets/icon-192.png','/assets/icon-512.png','/manifest.webmanifest'];
+const CACHE='estacionometros-shell-v5';
+const SHELL=['/','/assets/app.css','/assets/core.js','/assets/native.js','/assets/citizen.js','/assets/logo-portales.png','/assets/icon-192.png','/assets/icon-512.png','/manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('est')&&k!==CACHE).map(k=>caches.delete(k))))));
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET'||u.origin!==self.location.origin||!SHELL.includes(u.pathname))return;e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r;}).catch(()=>caches.match(u.pathname)));});
+
+self.addEventListener('push',e=>{let p={};try{p=e.data?.json()||{};}catch{}const path=p.url==='/admin'?'/admin':'/panel';e.waitUntil(self.registration.showNotification(String(p.title||'Estacionómetros Delicias').slice(0,100),{body:String(p.body||'Tienes una actualización de operación.').slice(0,200),icon:'/assets/icon-192.png',badge:'/assets/icon-192.png',tag:String(p.tag||'operacion').slice(0,100),requireInteraction:true,data:{url:path}}));});
+self.addEventListener('notificationclick',e=>{e.notification.close();const path=e.notification.data?.url==='/admin'?'/admin':'/panel';e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(async windows=>{const win=windows.find(w=>new URL(w.url).pathname===path);if(win)return win.focus();return clients.openWindow(path);}));});

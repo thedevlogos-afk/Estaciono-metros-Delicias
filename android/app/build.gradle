@@ -1,0 +1,8 @@
+plugins { id 'com.android.application' }
+android {
+ namespace 'mx.estacionometros.delicias.operador'
+ compileSdk 36
+ defaultConfig { applicationId 'mx.estacionometros.delicias.operador'; minSdk 29; targetSdk 36; versionCode 1; versionName '0.3.0' }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies { implementation 'androidx.webkit:webkit:1.14.0'; implementation 'com.google.firebase:firebase-messaging:25.0.1' }
