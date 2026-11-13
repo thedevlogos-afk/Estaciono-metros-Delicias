@@ -1,4 +1,4 @@
--- Aplicada con Supabase MCP; CLI no disponible en el entorno.
+-- Aplicada en el editor SQL de Supabase; CLI no disponible en el entorno.
 -- Evolución aditiva. Los importes/fundamentos se configuran por autoridad, sin semillas ficticias.
 begin;
 create table public.turnos (
