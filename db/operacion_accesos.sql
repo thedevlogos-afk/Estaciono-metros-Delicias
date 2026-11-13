@@ -76,4 +76,26 @@ create index alertas_inspector_reporte on public.alertas(inspector_id,reporte_id
 create index reportes_placa_creado on public.reportes(placa,creado desc);
 create index turnos_operador_inicio on public.turnos(operador_id,inicio desc);
 create index mantenimiento_parq_fecha on public.mantenimiento(parquimetro_id,creado desc);
+-- La reparación documentada levanta el bloqueo por falla histórica.
+create or replace function public.emitir_multa(p_solicitud uuid,p_parq text,p_placa text,p_tarifa uuid) returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare m public.multas; t uuid; tarifa public.tarifas; pl text:=upper(regexp_replace(coalesce(p_placa,''),'[^A-Za-z0-9]','','g'));
+begin
+ if auth.uid() is null or not public.es_staff() then raise exception 'Acceso denegado'; end if;
+ if p_solicitud is null or length(pl) not between 3 and 12 then raise exception 'Datos inválidos'; end if;
+ perform pg_advisory_xact_lock(hashtextextended(p_parq||':'||pl,0));
+ select * into m from public.multas where solicitud=p_solicitud and emisor_id=auth.uid();
+ if m.folio is not null then return to_jsonb(m); end if;
+ select id into t from public.turnos where operador_id=auth.uid() and fin is null;
+ if t is null then raise exception 'Inicia un turno'; end if;
+ if not exists(select 1 from public.parquimetros where id=p_parq and activo) then raise exception 'Parquímetro no disponible'; end if;
+ if exists(select 1 from public.reportes where parquimetro_id=p_parq and placa=pl and gracia_hasta>now()) then raise exception 'Gracia activa: no se puede emitir'; end if;
+ if exists(select 1 from public.parquimetros where id=p_parq and estado in ('falla_confirmada','mantenimiento')) then raise exception 'Aparato con falla confirmada: requiere revisión administrativa'; end if;
+ select * into tarifa from public.tarifas where id=p_tarifa and activa;
+ if tarifa.id is null then raise exception 'Configura una tarifa y fundamento autorizados'; end if;
+ if exists(select 1 from public.multas where parquimetro_id=p_parq and placa=pl and fecha>now()-interval '15 minutes') then raise exception 'Ya existe un ticket reciente para esta placa y aparato'; end if;
+ insert into public.multas(folio,placa,monto,motivo,parquimetro_id,emisor_id,turno_id,solicitud,tarifa_id,fundamento)
+ values('M-'||upper(replace(gen_random_uuid()::text,'-','')),pl,tarifa.monto,tarifa.motivo,p_parq,auth.uid(),t,p_solicitud,tarifa.id,tarifa.fundamento) returning * into m;
+ return to_jsonb(m);
+end $$;
 commit;

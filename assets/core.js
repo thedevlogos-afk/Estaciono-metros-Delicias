@@ -20,7 +20,7 @@ export const rpc=(name,body={})=>api('/rest/v1/rpc/'+name,{method:'POST',body:JS
 export async function login(email,password,role){
  const s=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});
  session={...s,expires_at:Date.now()+s.expires_in*1000};
- try{const [p]=await api('/rest/v1/perfiles?select=*&user_id=eq.'+s.user.id);if(!p?.activo||(role==='admin'&&p.rol!=='admin'))throw new Error('Esta cuenta no tiene acceso activo a este portal.');return p;}catch(e){await logout();throw e;}
+ try{if(role==='admin')await rpc('activar_administrador_inicial');const [p]=await api('/rest/v1/perfiles?select=*&user_id=eq.'+s.user.id);if(!p?.activo||(role==='admin'&&p.rol!=='admin'))throw new Error('Esta cuenta no tiene acceso activo a este portal.');return p;}catch(e){await logout();throw e;}
 }
 async function refresh(){try{const s=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})});session={...s,expires_at:Date.now()+s.expires_in*1000};}catch(e){session=null;location.reload();throw e;}}
 export async function logout(){try{if(session)await request('/auth/v1/logout',{method:'POST'});}finally{session=null;}}

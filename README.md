@@ -14,13 +14,15 @@ Primera entrega de la plataforma de tres portales, conservando HTML/JS sin depen
 
 `tests/database.sql` pasó sobre Postgres con datos sintéticos revertidos por ROLLBACK: turno idempotente, GPS, gracia de 15 minutos, bloqueo de multa, folios idempotentes, autoría, impresiones, aislamiento entre operadores, suspensión y seguimiento por token. Cinco pruebas Node también aprobadas.
 
-La ampliación `db/propuestas/operacion_accesos_pendiente.sql` **NO está aplicada**: la revisión automática rechazó sus cambios adicionales de bootstrap administrativo, auditoría y mantenimiento. No activar su interfaz hasta obtener aprobación específica y validar esa ampliación. Aún no hay cuentas de personal; el primer administrador debe provisionarse de forma controlada en Supabase. `/acceso` permite solicitar una cuenta pendiente y recuperar contraseña; no concede privilegios.
+**Segunda migración aplicada y verificada el 13/11/2026:** `db/operacion_accesos.sql`. Incluye activación inicial reservada al propietario con correo confirmado y lista privada, suspensión de operadores con cierre de turno/GPS, estado estructurado del aparato, reparación documentada y bitácora protegida. `tests/database_phase2.sql` pasó con ROLLBACK. La lista del propietario está configurada directamente en la base y no se publica en el repositorio.
+
+Para iniciar Administración: abrir `/acceso?administracion`, registrar y confirmar el correo autorizado del propietario y entrar en `/admin`. La contraseña la define el propio usuario. Otros registros permanecen como operadores pendientes hasta su activación por Administración. No hay acceso Google ni autoasignación de roles por metadatos.
 
 La migración contiene tablas nuevas, autoría de multas, RPCs de gracia/idempotencia, turnos/GPS, despacho al más cercano con posición reciente y reglas de lectura/escritura. No incluye tarifas inventadas ni aparatos de demostración. La primera tarifa debe cargarse con fundamento e importe autorizados. Sin tarifa activa no hay emisión.
 
 La asignación inicial se realiza al recibir el reporte; no incluye todavía aceptación/timeout ni escalamiento automático. Los tableros consultan cada 15 segundos, no WebSockets. La impresión usa el diálogo del sistema, pendiente de validar con impresora mini física. No hay rastreo con pantalla bloqueada garantizado.
 
-Pendiente: fotos verificadas de Facebook, evidencias fotográficas/Storage, QR del ticket, Web Push, agenda de mantenimiento, auditoría completa, altas por invitación desde el portal, MFA, cola offline, mapas por zona, estados de falla estructurados y pruebas integrales con cuentas reales. El logotipo oficial aportado se incorporó sin distorsión a todos los portales, accesos, ticket, favicon e iconos PWA de 192 y 512 px.
+Pendiente: fotos verificadas de Facebook, evidencias fotográficas/Storage, QR del ticket, Web Push, órdenes de mantenimiento avanzadas, exportación de bitácora, altas por invitación desde el portal, MFA, cola offline y mapas por zona y pruebas integrales con cuentas reales. El logotipo oficial aportado se incorporó sin distorsión a todos los portales, accesos, ticket, favicon e iconos PWA de 192 y 512 px.
 
 Los módulos nuevos dependen de la migración. Login conserva las cuentas y roles existentes; los errores de conexión/esquema se muestran sin simular éxitos. La clave publicable existente se conserva; ninguna clave de servicio se incorpora al cliente.
 
@@ -30,7 +32,7 @@ Los módulos nuevos dependen de la migración. Login conserva las cuentas y role
 
 Antes de aplicar SQL: exportar esquema/políticas y respaldar datos; probar en una base aislada la migración, idempotencia concurrente y roles anon/operador/admin; verificar pagos existentes y rutas `checkout.js` / `webhook.js`. Estos archivos de pagos se conservaron sin cambios: ya estaban en raíz y su disponibilidad como API Vercel sigue pendiente de auditoría. Los redirects de correo de Auth deben incluir el dominio de producción y `/acceso`.
 
-`db/plataforma_fase1.sql` es un script de entrega, no un historial CLI fabricado. CLI Supabase no está instalado. Aplicación remota prevista mediante `apply_migration` con nombre `plataforma_fase1`, después de la aprobación y validación correspondientes.
+`db/plataforma_fase1.sql` es un script de entrega, no un historial CLI fabricado. CLI Supabase no está instalado. La primera fase se aplicó desde el editor SQL autenticado y la segunda mediante `apply_migration` con nombre `operacion_accesos`.
 
 ## Pruebas de base requeridas
 
