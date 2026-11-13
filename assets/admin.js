@@ -1,3 +1,5 @@
+import {enhanceAdminModule} from './admin-modules.js';
+import {setupMapConsole,matchesMapMeter,selectMapEntity,updateMapStaff} from './map-console.js';
 import {setupPush,detachPush} from './push.js';
 import {renderAdminDashboard} from './admin-dashboard.js';
 import{$,api,rpc,login,logout,busy,message,esc,date,money,mountMap,meterMapIcon,operatorMapIcon,setupNetwork}from'./core.js';
@@ -6,21 +8,24 @@ if(folioSearch){page='multas';document.querySelectorAll('[data-page]').forEach(b
 const paths={meters:'/rest/v1/parquimetros?select=*&order=id',staff:'/rest/v1/perfiles?select=*&order=nombre',reports:'/rest/v1/reportes?select=*&order=creado.desc&limit=100'};
 const card=(n,label)=>`<div class="card"><div class="number">${esc(n)}</div><small>${esc(label)}</small></div>`;
 const empty=t=>`<article class="card muted">${esc(t)}</article>`;
-$('login').onsubmit=async e=>{e.preventDefault();await busy(e.submitter,async()=>{try{await login($('email').value,$('password').value,'admin');$('password').value='';setupPush();$('auth').hidden=true;$('app').hidden=false;await load();interval=setInterval(()=>{if(!document.hidden&&!document.activeElement?.closest('#view form'))load().catch(er=>message('admin-message',er.message,true));},15000);locationInterval=setInterval(()=>{if(!document.hidden&&page==='mapa')refreshOperatorLocations();},5000);}catch(er){message('auth-message',er.message,true);}});};
+$('login').onsubmit=async e=>{e.preventDefault();await busy(e.submitter,async()=>{try{await login($('email').value,$('password').value,'admin');$('password').value='';setupPush();$('auth').hidden=true;$('app').hidden=false;await load();interval=setInterval(()=>{if(!document.hidden&&!document.activeElement?.closest('#view form, #view input, #view select')&&!document.querySelector('#view details[open]'))load().catch(er=>message('admin-message',er.message,true));},15000);locationInterval=setInterval(()=>{if(!document.hidden&&page==='mapa')refreshOperatorLocations();},5000);}catch(er){message('auth-message',er.message,true);}});};
 $('logout').onclick=async()=>{clearInterval(interval);clearInterval(locationInterval);await detachPush();await logout();location.reload();};
 $('refresh').onclick=()=>busy($('refresh'),()=>load().catch(e=>message('admin-message',e.message,true)));
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=async()=>{page=b.dataset.page;document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x===b));$('page-title').textContent=b.textContent.trim();try{await load();}catch(e){message('admin-message',e.message,true);}});
-async function load(){message('admin-message','');$('view').hidden=page==='mapa';$('map-view').hidden=page!=='mapa';await updateTariffReminder();await({resumen, mapa, reportes,multas,buzon,aparatos,equipo,cortes,tarifas,mantenimiento,auditoria})[page]();$('updated').textContent='Actualizado '+new Date().toLocaleTimeString('es-MX',{timeZone:'America/Chihuahua'})+(page==='mapa'?' · GPS del mapa cada 5 s':' · consulta cada 15 s');}
+async function load(){message('admin-message','');$('view').hidden=page==='mapa';$('map-view').hidden=page!=='mapa';await updateTariffReminder();await({resumen, mapa, reportes,multas,buzon,aparatos,equipo,cortes,tarifas,mantenimiento,auditoria})[page]();enhanceAdminModule(page);$('updated').textContent='Actualizado '+new Date().toLocaleTimeString('es-MX',{timeZone:'America/Chihuahua'})+(page==='mapa'?' · GPS del mapa cada 5 s':' · consulta cada 15 s');}
 async function updateTariffReminder(){try{const active=await api('/rest/v1/tarifas?select=id&activa=eq.true');$('tariff-reminder').innerHTML=active.length?'<b>Revisión de tarifas:</b> hay '+active.length+' tarifa(s) activa(s). Confirma su vigencia y fundamento antes de operar.':'<b>Tarifas pendientes:</b> conceptos e importes de infracción requieren fundamento autorizado. La emisión seguirá bloqueada hasta registrar la autorización.';}catch{$('tariff-reminder').textContent='Recordatorio: deja pendientes las tarifas de infracción hasta contar con autorización y fundamento.';}}
 async function resumen(){await renderAdminDashboard({api,goTo:target=>document.querySelector('[data-page="'+target+'"]').click()});}
 async function mapa(){
  if(!map){map=mountMap('map');layer=L.layerGroup().addTo(map);operatorLayer=L.layerGroup().addTo(map);}
  map.invalidateSize();const [meters,reports,turns]=await Promise.all([api(paths.meters),api(paths.reports),api('/rest/v1/turnos?select=operador_id&fin=is.null')]);activeShiftIds=turns.map(t=>String(t.operador_id));layer.clearLayers();let located=0;const points=[];
+ setupMapConsole(meters,reports,map,()=>mapa().catch(e=>message('admin-message',e.message,true)));
  for(const m of meters){
+  if(!matchesMapMeter(m))continue;
   if(m.lat===null||m.lng===null)continue;const lat=Number(m.lat),lng=Number(m.lng);if(!Number.isFinite(lat)||!Number.isFinite(lng))continue;
   located++;points.push([lat,lng]);const pending=reports.some(r=>r.parquimetro_id===m.id&&r.estatus==='pendiente');
   const state=m.estado==='mantenimiento'?'mantenimiento':(pending||['falla_confirmada','falla_reportada'].includes(m.estado)?'falla':'operativo');
   const marker=L.marker([lat,lng],{icon:meterMapIcon(state),title:'Parquímetro '+m.id}).addTo(layer);
+  marker.on('click',()=>selectMapEntity('meter',m));
   marker.bindPopup('<b>'+esc(m.id)+'</b><br>'+esc(m.calle)+'<br>Estado: '+esc(m.estado||'operativo')+'<br>'+(pending?'Reporte ciudadano pendiente':'Sin reporte pendiente en últimos 100'));
  }
  if(points.length&&!mapFitted){map.fitBounds(points,{padding:[34,34],maxZoom:17});mapFitted=true;}
@@ -33,6 +38,7 @@ async function refreshOperatorLocations(){
  try{
   if(!navigator.onLine)throw new Error('El dispositivo de Administración está sin internet.');
   const staff=await api('/rest/v1/perfiles?select=user_id,nombre,lat,lng,precision_m,ubicacion_at,activo&rol=eq.inspector&activo=eq.true&order=nombre');
+  updateMapStaff(staff);
   const visible=new Set(),points=[];let fresh=0,delayed=0,lost=0,weak=0;
   for(const s of staff){
    if(s.lat===null||s.lng===null||!Number.isFinite(Number(s.lat))||!Number.isFinite(Number(s.lng)))continue;
@@ -40,8 +46,8 @@ async function refreshOperatorLocations(){
    const state=age>60000?'offline':age>25000?'stale':quality>100?'weak':'fresh';
    if(age<=25000)fresh++;else if(age<=60000)delayed++;else lost++;if(quality>100)weak++;
    const id=String(s.user_id);visible.add(id);points.push([lat,lng]);const marker=operatorMarkers.get(id);const popup='<b>'+esc(s.nombre||'Operador')+'</b><br><span class="map-popup-status">'+(state==='fresh'?'GPS actualizado':state==='stale'?'Actualización demorada':state==='offline'?'Sin señal reciente':'Precisión GPS baja')+'</span><br>Último envío: '+esc(date(s.ubicacion_at))+'<br>Precisión: '+(Number.isFinite(precision)?Math.round(precision)+' m':'sin dato')+(age>60000?'<br>Ubicación antigua · verificar contacto':'');
-   if(marker){marker.setLatLng([lat,lng]);marker.setIcon(operatorMapIcon(state));marker.setPopupContent(popup);}
-   else{const next=L.marker([lat,lng],{icon:operatorMapIcon(state),title:'Operador '+(s.nombre||'')}).addTo(operatorLayer);next.bindPopup(popup);next.bindTooltip(esc(s.nombre||'Operador'),{direction:'top',offset:[0,-31]});operatorMarkers.set(id,next);}
+   if(marker){marker.off('click');marker.on('click',()=>selectMapEntity('operator',s));marker.setLatLng([lat,lng]);marker.setIcon(operatorMapIcon(state));marker.setPopupContent(popup);}
+   else{const next=L.marker([lat,lng],{icon:operatorMapIcon(state),title:'Operador '+(s.nombre||'')}).addTo(operatorLayer);next.on('click',()=>selectMapEntity('operator',staff.find(s=>String(s.user_id)===id)||s));next.bindPopup(popup);next.bindTooltip(esc(s.nombre||'Operador'),{direction:'top',offset:[0,-31]});operatorMarkers.set(id,next);}
   }
   for(const [id,marker] of operatorMarkers)if(!visible.has(id)){operatorLayer.removeLayer(marker);operatorMarkers.delete(id);}
   if(points.length&&!mapFitted){map.fitBounds(points,{padding:[34,34],maxZoom:17});mapFitted=true;}
