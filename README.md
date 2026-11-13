@@ -26,9 +26,9 @@ Los scripts de entrega están en la carpeta db. No contienen credenciales de ser
 ## Estado operativo y límites
 
 - Los avisos ciudadanos generan folio, registran los 15 minutos y buscan un operador con turno y GPS reciente. La asignación inicial no incorpora aún aceptación con timeout ni escalamiento automático.
-- Los tableros consultan cada 15 segundos; no usan WebSockets.
+- El Centro de Operaciones actualiza el mapa de operadores cada 5 segundos; los datos generales del panel se consultan cada 15 segundos. PWA activa y Android envían latidos GPS cada 10 segundos durante un turno; son actualizaciones frecuentes por consulta, no WebSockets.
 - El mapa muestra solo aparatos con coordenadas reales. La ausencia de telemetría no se presenta como lectura de monedas ni como confirmación de uso.
-- El servicio Android puede mantener ubicación con pantalla bloqueada mediante notificación visible y permiso preciso. Falta validar continuidad en equipos físicos. En PWA de navegador, bloquear o minimizar puede pausar GPS.
+- El servicio Android solicita lecturas GPS cada 10 segundos y envía la posición nueva con notificación visible y permiso preciso. Falta validar continuidad en equipos físicos. En PWA de navegador, bloquear o minimizar puede pausar GPS; al volver al primer plano la ubicación se reactiva y se muestra la conectividad, precisión y hora del último envío.
 - Firebase Web Push está enlazado mediante VAPID. Chrome registró un dispositivo de prueba y el proveedor aceptó el envío; falta confirmar visualmente la notificación en el sistema operativo.
 - La recepción de push nativo Android, la impresora mini real, las fotografías oficiales de Facebook y la carga privada de evidencia requieren pruebas o configuración adicionales. Facebook identifica a la institución y lista su sitio web, pero no expuso teléfono, correo, domicilio ni horarios en la vista pública.
 - Cola offline, exportación de bitácora, filtros por zona y telemetría con chip son fases posteriores.

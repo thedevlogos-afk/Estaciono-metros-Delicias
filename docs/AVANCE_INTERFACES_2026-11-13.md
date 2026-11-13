@@ -26,7 +26,7 @@ Los marcadores usan el padrón oficial y no muestran información del personal. 
 | Revisar | Escanear QR con cámara o escribir el código del aparato | Ficha con dirección, coordenadas y estado registrado |
 | Reportar falla | Elegir síntoma y describir observación de campo | Aviso durable para Administración; cambia estado si estaba operativo |
 | Alertas | Revisar reportes ciudadanos asignados y registrar resultado | Seguimiento del reporte dentro del intervalo de gracia |
-| Mapa | Ver aparatos georreferenciados | Apoyo para rondín, sin simular telemetría |
+| Mapa | Ver aparatos georreferenciados con iconos compactos de parquímetro | Centra el padrón y conserva selección por marcador; no simula telemetría |
 | Tickets | Capturar placa, motivo autorizado, confirmar verificación y previsualizar | Emisión server-side bloqueada si no existe tarifa activa |
 | Cortes | Capturar importe y nota de recolección | Registro del corte asociado al aparato |
 | Perfil | Ver nombre, límites del GPS web y guía de notificaciones | Cierre de turno explícito |
@@ -38,7 +38,7 @@ En Android, el servicio de ubicación persistente requiere permisos precisos y n
 | Pantalla | Acción disponible | Resultado |
 |---|---|---|
 | Resumen | Ver aparatos, reportes pendientes, turnos y GPS reciente | Lectura general actualizada cada 15 segundos |
-| Mapa operativo | Ver aparatos, fallas y posición reciente del personal | Las posiciones antiguas se marcan como desactualizadas |
+| Mapa operativo | Icono de parquímetro y peón de ajedrez para operador | GPS cada 5 s; verde <25 s, ámbar 25–60 s, gris >60 s; precisión baja y latencia de conexión visibles |
 | Reportes | Revisar avisos ciudadanos y alertar al operador elegible más cercano | Bandeja durable; si no hay operador reciente se indica |
 | Tickets y analítica | Buscar folio y consultar volumen/importes por 24 horas, semana o mes | Importe emitido separado de importe cobrado |
 | Buzón | Consultar quejas/sugerencias y actualizar su estado | Seguimiento administrativo |
@@ -49,19 +49,19 @@ En Android, el servicio de ubicación persistente requiere permisos precisos y n
 | Tarifas | Registrar versión con fundamento autorizado | Mantener pendiente mientras falte validación oficial |
 | Bitácora | Consultar cambios sensibles | Evidencia administrativa de actividad |
 
-La pantalla de acceso y recuperación mantiene visible el recordatorio de tarifas pendientes. La lectura de avisos de aparato requiere sesión; RLS permite verlos a Administración y al operador emisor. La creación y cambios de estado usan RPC con validación de rol y turno.
+La pantalla de acceso y recuperación mantiene visible el recordatorio de tarifas pendientes. La lectura de avisos de aparato requiere sesión; RLS permite verlos a Administración y al operador emisor. La creación y cambios de estado usan RPC con validación de rol y turno. El mapa usa iconos compactos para parquímetros y una figura de peón de ajedrez para operadores; su conexión, precisión y antigüedad de GPS se identifican por estado visual.
 
 ## Límites por validar antes del piloto
 
 - Cargar el padrón y coordenadas verificados por Administración. La base debe contener aparatos reales; no se agregan registros ficticios.
 - Mantener tarifas pendientes hasta recibir fundamento e importes oficiales. No habilitar tickets de prueba con importes inventados.
 - Probar entrega visible de push web y Android en equipos físicos; la aceptación del proveedor confirma recepción técnica, no visualización en pantalla.
-- Probar GPS al caminar, minimizar, bloquear, perder conexión, denegar permisos y cerrar el turno en modelos Android y navegadores objetivo.
+- Probar GPS al caminar, minimizar, bloquear, perder conexión, denegar permisos y cerrar el turno en modelos Android y navegadores objetivo. El APK Android debe recompilarse para recibir el nuevo ciclo GPS de 10 s; Gradle no pudo descargar su distribución en este entorno por falta de conexión a services.gradle.org.
 - Probar ticket y código QR en la impresora mini seleccionada, con papel real, acentos y reimpresión.
 - Integrar evidencia fotográfica privada cuando se definan retención, permisos y aviso de privacidad.
 - Incorporar fotografías de Facebook únicamente tras seleccionar y confirmar material institucional reutilizable. El logotipo entregado por el usuario ya está aplicado.
 - Diseñar la electrónica/chip para autodiagnóstico solo después de identificar modelo, acceso eléctrico, cobertura y pruebas sin intervenir el interior.
-- El panel consulta cada 15 segundos. Aceptación/timeout/escalamiento automático, cola offline y trabajo con rutas/zonas ampliadas siguen siendo fases posteriores.
+- El panel general consulta cada 15 segundos; el mapa administrativo consulta solo posiciones cada 5 segundos. PWA y Android envían latidos GPS cada 10 segundos durante el turno. Aceptación/timeout/escalamiento automático, cola offline y trabajo con rutas/zonas ampliadas siguen siendo fases posteriores.
 
 ## Fuentes institucionales verificadas
 
