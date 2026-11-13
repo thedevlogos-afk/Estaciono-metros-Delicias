@@ -1,0 +1,14 @@
+import {esc,date} from './core.js';
+let chosen=null;
+export function enhanceIncidentWorkspace(page){
+ if(!['reportes','mantenimiento','buzon'].includes(page))return;
+ const view=document.getElementById('view'),list=view.querySelector('.list');if(!list)return;
+ const records=[...list.querySelectorAll(':scope > article')];if(!records.length)return;
+ const frame=document.createElement('section');frame.className='incident-workspace';list.before(frame);
+ const queue=document.createElement('section');queue.className='incident-queue';queue.innerHTML='<div class="workspace-panel-heading"><h3>Cola de atención</h3><span>'+records.length+' registros</span></div>';
+ const detail=document.createElement('section');detail.className='incident-detail card';detail.setAttribute('aria-label','Detalle del registro');
+ const context=document.createElement('aside');context.className='incident-context card';context.innerHTML='<p class="eyebrow">Seguimiento operativo</p><h3>Información del registro</h3><p class="muted">Selecciona un registro para consultar su información y las acciones disponibles.</p><div class="context-note"><b>Atención coordinada</b><p>Los cambios de estado se guardan mediante las acciones del registro seleccionado.</p></div><div class="context-note"><b>Actualización de datos</b><p>Usa Actualizar para consultar nuevamente los registros del servidor.</p></div>';
+ frame.append(queue,detail,context);queue.append(list);
+ const show=(record,index)=>{chosen=index;records.forEach(r=>r.classList.toggle('incident-selected',r===record));const original=record.querySelector('.module-record-details');if(!original)return;const previous=detail.querySelector('.module-record-details');if(previous&&previous!==original){const owner=records.find(r=>r.dataset.recordKey===previous.dataset.owner);if(owner)owner.append(previous);}detail.replaceChildren();const title=document.createElement('div');title.className='workspace-panel-heading';const heading=document.createElement('h3');heading.textContent=record.querySelector('h3,b')?.textContent||'Detalle';title.append(heading);detail.append(title);const pill=record.querySelector('.pill');if(pill)detail.append(pill.cloneNode(true));original.open=true;original.dataset.owner=String(index);detail.append(original);const stamp=document.createElement('p');stamp.className='muted incident-detail-footer';stamp.textContent='Información consultada · '+new Date().toLocaleTimeString('es-MX',{timeZone:'America/Chihuahua'});detail.append(stamp);};
+ records.forEach((record,index)=>{record.dataset.recordKey=String(index);const button=document.createElement('button');button.className='incident-open';button.textContent='Consultar detalle →';button.onclick=()=>show(record,index);record.append(button);});show(records[Math.min(chosen??0,records.length-1)],Math.min(chosen??0,records.length-1));
+}
