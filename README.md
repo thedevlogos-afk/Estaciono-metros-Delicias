@@ -22,15 +22,17 @@ La migración contiene tablas nuevas, autoría de multas, RPCs de gracia/idempot
 
 La asignación inicial se realiza al recibir el reporte; no incluye todavía aceptación/timeout ni escalamiento automático. Los tableros consultan cada 15 segundos, no WebSockets. La impresión usa el diálogo del sistema, pendiente de validar con impresora mini física. No hay rastreo con pantalla bloqueada garantizado.
 
-Pendiente: fotos verificadas de Facebook, evidencias fotográficas/Storage, QR del ticket, Web Push, órdenes de mantenimiento avanzadas, exportación de bitácora, altas por invitación desde el portal, MFA, cola offline y mapas por zona y pruebas integrales con cuentas reales. El logotipo oficial aportado se incorporó sin distorsión a todos los portales, accesos, ticket, favicon e iconos PWA de 192 y 512 px.
+Pendiente: fotos verificadas de Facebook, evidencias fotográficas/Storage, Web Push, órdenes de mantenimiento avanzadas, exportación de bitácora, altas por invitación desde el portal, MFA, cola offline y mapas por zona y pruebas integrales con cuentas reales. El logotipo oficial aportado se incorporó sin distorsión a todos los portales, accesos, ticket, favicon e iconos PWA de 192 y 512 px.
 
 Los módulos nuevos dependen de la migración. Login conserva las cuentas y roles existentes; los errores de conexión/esquema se muestran sin simular éxitos. La clave publicable existente se conserva; ninguna clave de servicio se incorpora al cliente.
+
+Los tickets incorporan QR para validación por el personal autenticado en Administración. La ciudadanía permanece sin login y utiliza únicamente reporte/seguimiento y buzón.
 
 ## Comprobaciones
 
 `npm test` y `npm run check` usan Node sin instalar dependencias. Para preview estático: `python3 -m http.server 4173 --directory .` y abrir `http://localhost:4173`. Las pruebas unitarias cubren escape HTML, fecha Chihuahua y separación de sesión/rol del cliente; no sustituyen pruebas de RLS del servidor.
 
-Antes de aplicar SQL: exportar esquema/políticas y respaldar datos; probar en una base aislada la migración, idempotencia concurrente y roles anon/operador/admin; verificar pagos existentes y rutas `checkout.js` / `webhook.js`. Estos archivos de pagos se conservaron sin cambios: ya estaban en raíz y su disponibilidad como API Vercel sigue pendiente de auditoría. Los redirects de correo de Auth deben incluir el dominio de producción y `/acceso`.
+Antes de aplicar SQL: exportar esquema/políticas y respaldar datos; probar en una base aislada la migración, idempotencia concurrente y roles anon/operador/admin; verificar pagos existentes y rutas `checkout.js` / `webhook.js`. Estos archivos de pagos se conservaron sin cambios: ya estaban en raíz y su disponibilidad como API Vercel sigue pendiente de auditoría. Se configuró Site URL en `https://estacionometros-delicias.vercel.app` y se autorizaron exclusivamente `/admin`, `/panel` y `/acceso` para confirmación/recuperación.
 
 `db/plataforma_fase1.sql` es un script de entrega, no un historial CLI fabricado. CLI Supabase no está instalado. La primera fase se aplicó desde el editor SQL autenticado y la segunda mediante `apply_migration` con nombre `operacion_accesos`.
 
@@ -47,3 +49,9 @@ Antes de aplicar SQL: exportar esquema/políticas y respaldar datos; probar en u
 9. Reporte sin candidato aparece a Administración; no se promete agente en camino.
 
 Ver el plan integral en la rama `plan/plataforma-integral-2026-11-13` para alcance completo y fases posteriores.
+
+## Pruebas de acceso reales
+
+Se crearon dos cuentas de prueba solicitadas (operador y administrador) y se verificó HTTP 200 en el inicio de sesión y sus roles activos. Las contraseñas no se almacenan en el repositorio. La cuenta del propietario quedó activada tras confirmar su correo.
+
+QRCode.js 1.0.0 está incluido localmente con licencia MIT. El QR del ticket apunta al portal administrativo y solo contiene el folio: requiere login del personal y no expone placas en la URL. La impresión física sigue pendiente de hardware real.
