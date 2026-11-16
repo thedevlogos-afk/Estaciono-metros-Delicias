@@ -15,7 +15,7 @@ export function updateMapStaff(rows){
   const entry=routes.get(id)||{points:[],segments:[]};
   const stamp=new Date(s.ubicacion_at).getTime(),lat=Number(s.lat),lng=Number(s.lng);
   const last=entry.points.at(-1);
-  if(s.lat!=null&&s.lng!=null&&Number.isFinite(lat)&&Number.isFinite(lng)&&now-stamp<60000&&Number(s.precision_m)<=100&&(!last||stamp>last.time))entry.points.push({lat,lng,time:stamp});
+  if(s.precision_m!=null&&s.lat!=null&&s.lng!=null&&Number.isFinite(lat)&&Number.isFinite(lng)&&now-stamp<60000&&Number(s.precision_m)<=100&&(!last||stamp>last.time))entry.points.push({lat,lng,time:stamp});
   entry.points=entry.points.filter(p=>now-p.time<900000).slice(-120);
   entry.segments.forEach(segment=>layer.removeLayer(segment));entry.segments=[];
   for(let i=1;i<entry.points.length;i++){

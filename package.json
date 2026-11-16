@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check assets/core.js && node --check assets/citizen.js && node --check assets/operator.js && node --check assets/admin.js && node --check assets/admin-dashboard.js && node --check assets/map-console.js && node --check assets/admin-modules.js && node --check sw.js && node --check assets/access.js && node --check assets/native.js && node --check assets/push.js && node --check api/push/dispatch.js"
+    "check": "node --check assets/core.js && node --check assets/citizen.js && node --check assets/operator.js && node --check assets/admin.js && node --check assets/admin-dashboard.js && node --check assets/map-console.js && node --check assets/admin-modules.js && node --check sw.js && node --check assets/access.js && node --check assets/native.js && node --check assets/push.js && node --check api/push/dispatch.js && node --check assets/incident-workspace.js && node --check assets/portal-design.js && node --check assets/work-orders.js && node --check assets/case-history.js && node --check assets/maintenance-planner.js && node --check assets/operations-metrics.js"
   },
   "dependencies": {
     "web-push": "3.6.7"
