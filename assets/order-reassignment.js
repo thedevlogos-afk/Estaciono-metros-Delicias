@@ -1,0 +1,7 @@
+import {api,rpc,busy,esc} from './core.js';
+export function mountReassignment(card,order,onSaved){
+ if(['cerrada','cancelada'].includes(order.estado))return;
+ const details=document.createElement('details');details.innerHTML='<summary>Reasignar o reprogramar</summary><form><label>Responsable<select required></select></label><label>Fecha<input type="date" required></label><label>Justificación<textarea required minlength="10" maxlength="1000"></textarea></label><button>Guardar reasignación</button><p role="status"></p></form>';card.append(details);details.querySelector('input').value=order.programado;
+ details.ontoggle=async()=>{if(!details.open||details.dataset.loaded)return;try{const people=await api('/rest/v1/perfiles?select=user_id,nombre&rol=eq.inspector&activo=eq.true');details.querySelector('select').innerHTML=people.map(p=>'<option value="'+esc(p.user_id)+'">'+esc(p.nombre)+'</option>').join('');details.querySelector('select').value=order.responsable_id;details.dataset.loaded='true';}catch(e){details.querySelector('p').textContent=e.message;}};
+ details.querySelector('form').onsubmit=e=>{e.preventDefault();busy(e.submitter,async()=>{try{await rpc('reasignar_orden_mantenimiento',{p_id:order.id,p_responsable:details.querySelector('select').value,p_fecha:details.querySelector('input').value,p_nota:details.querySelector('textarea').value});await onSaved();}catch(error){details.querySelector('p').textContent=error.message;}});};
+}
